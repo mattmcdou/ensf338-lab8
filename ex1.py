@@ -50,5 +50,20 @@ class Graph:
 
     def importFromFile(self, file):
         self = Graph()
+        with open(file) as f:
+            f.readline()
+            line = True
+            while line != "}":
+                # read first node
+                # read second node
+                # read weight
+                # if node invalid or weight invalid:
+                return None
+                # endif
+                # if node not exists:
+                self.addNode()
+                # endif
+                self.addEdge() #node1, node2, weight
+                line = f.readline()
         return NotImplemented
 
