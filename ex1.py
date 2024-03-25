@@ -48,22 +48,54 @@ class Graph:
                 if edge.nodeOne == n1 and edge.nodeTwo == n2:
                     node.adjacent.remove(edge)
 
-    def importFromFile(self, file):
-        self = Graph()
-        with open(file) as f:
-            f.readline()
-            line = True
-            while line != "}":
-                # read first node
-                # read second node
-                # read weight
-                # if node invalid or weight invalid:
-                return None
-                # endif
-                # if node not exists:
-                self.addNode()
-                # endif
-                self.addEdge() #node1, node2, weight
-                line = f.readline()
-        return NotImplemented
+    def importFromFile(self, file_path):
+        self.elements = []
+
+        with open(file_path, 'r') as f:
+            lines = f.readlines()
+
+        if "strict graph" not in lines[0]:
+                print("not in")
+                return None 
+            
+
+        for line in lines[1:]:
+            line = line.strip()
+            if line == '}':
+                break
+
+            parts = line.replace('--', ' ').replace('[weight=', ' ').replace('];', ' ').split()
+            if len(parts) == 3:
+                node1_data, node2_data, weight = parts[0], parts[1], parts[2]
+            elif len(parts) == 2:
+                node1_data, node2_data, weight = parts[0], parts[1], 1
+            if len(parts) == 2 or len(parts) == 3:
+
+                node1 = self.findNode(node1_data)
+                if not node1:
+                    node1 = self.addNode(node1_data)
+                
+                node2 = self.findNode(node2_data)
+                if not node2:
+                    node2 = self.addNode(node2_data)
+
+                self.addEdge(node1, node2, int(weight))
+
+    def findNode(self, data):
+        for node in self.elements:
+            if node.data == data:
+                return node
+        return None
+    
+    def printTree(self):
+        for element in self.elements:
+            print(f"data: {element.data}")
+            for adj in element.adjacent:
+                print(f"adjacenies: {adj.nodeOne.data}, {adj.nodeTwo.data}, {adj.weight}")
+
+
+graph = Graph()
+
+graph.importFromFile("random.dot")
+graph.printTree()
 
