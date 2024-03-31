@@ -104,7 +104,7 @@ class Graph:
             return node
         return self.union_find(parent, parent[node])
 
-    def kruskal(self):
+    def mst(self):
         result = Graph()
         parent = {}
         for node in self.elements:
@@ -131,5 +131,5 @@ class Graph:
 
 G = Graph()
 G.importFromFile("random.dot")
-MST = G.kruskal()
+MST = G.mst()
 MST.printTree()
