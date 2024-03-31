@@ -99,10 +99,15 @@ class Graph:
             for adj in element.adjacent:
                 print(f"adjacenies: {adj.nodeOne.data}, {adj.nodeTwo.data}, {adj.weight}")
 
-    def union_find(self, parent, node):
+    def find_parent(self, parent, node):
         if parent[node] == node:
             return node
-        return self.union_find(parent, parent[node])
+        return self.find_parent(parent, parent[node])
+
+    def union(self, parent, node1, node2):
+        parent1 = self.find_parent(parent, node1)
+        parent2 = self.find_parent(parent, node2)
+        parent[parent1] = parent2
 
     def mst(self):
         result = Graph()
@@ -119,15 +124,12 @@ class Graph:
                 unique_edges.append(edge)
 
         for weight, edge in unique_edges:
-            parent1 = self.union_find(parent, edge.nodeOne.data)
-            parent2 = self.union_find(parent, edge.nodeTwo.data)
-
-            if parent1 != parent2:
+            if self.find_parent(parent, edge.nodeOne.data) != self.find_parent(parent, edge.nodeTwo.data):
                 result.addEdge(edge.nodeOne, edge.nodeTwo, weight)
-                parent[parent1] = parent2
+                self.union(parent, edge.nodeOne.data, edge.nodeTwo.data)
 
         return result
-
+    
 
 G = Graph()
 G.importFromFile("random.dot")
