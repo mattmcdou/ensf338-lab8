@@ -3,44 +3,6 @@ import matplotlib.pyplot as plt
 import heapq
 import math
 
-class QueueNode:
-    def __init__(self, data):
-        self.data = data
-        self.next = None
-
-class SlowQueue:
-    def __init__(self):
-        self.front = None
-        self.rear = None
-
-    def enqueue(self, item):
-        new_node = QueueNode(item)
-        if self.rear is None:
-            self.front = new_node
-            self.rear = new_node
-        else:
-            self.rear.next = new_node
-            self.rear = new_node
-
-    def dequeue(self):
-        if self.is_empty():
-            print("Cannot dequeue from an empty queue")
-        else:
-            dequeued_item = self.front.data
-            self.front = self.front.next
-            if self.front is None:
-                self.rear = None
-            return dequeued_item
-
-    def is_empty(self):
-        return self.front is None
-
-    def peek(self):
-        if not self.is_empty():
-            return self.front.data
-        else:
-            return None
-
 class FastQueue:
     def __init__(self):
         self.heap = []
@@ -49,28 +11,27 @@ class FastQueue:
         heapq.heappush(self.heap, (priority, item))
     
     def pop(self):
-        return heapq.heappop(self.heap)[1]
+        return heapq.heappop(self.heap)
     
     def __len__(self):
         return len(self.heap)
 
 class Node:
-
     def __init__(self, data):
         self.data = data
-        self.adjacent = []
+        self.adjacent = [] # the adjacency list is a list of Edge classes, NOT Node classes
 
+    def __lt__(self, other):
+        # Define how Nodes should be compared based on their data (this is for heapq usage so it can heapify properly)
+        return self.data < other.data
 
 class Edge:
-    
     def __init__(self, n1, n2, weight):
         self.nodeOne = n1
         self.nodeTwo = n2
         self.weight = weight
 
-
 class Graph:
-
     def __init__(self):
         self.elements = []
 
@@ -102,7 +63,7 @@ class Graph:
         for node in self.elements:
             for edge in node.adjacent:
                 if edge.nodeOne == n1 and edge.nodeTwo == n2:
-                    node.adjacent.remove(edge) # removing the edge removes node 2
+                    node.adjacent.remove(edge) # removing the edge removes any connection between the two vertices
 
     def importFromFile(self, file_path):
         self.elements = []
@@ -113,7 +74,6 @@ class Graph:
         if "strict graph" not in lines[0]:
                 print("not in")
                 return None 
-            
 
         for line in lines[1:]:
             line = line.strip()
@@ -149,32 +109,26 @@ class Graph:
             for adj in element.adjacent:
                 print(f"adjacenies: {adj.nodeOne.data}, {adj.nodeTwo.data}, {adj.weight}")
 
-    def slowSP(self, start_node):
-        distances = {node: math.inf for node in self.elements}
-        distances[start_node] = 0
-
-        queue = SlowQueue()
-        queue.enqueue(start_node)
-
-        while not queue.is_empty():
-            current_node = queue.dequeue()
-
-            for edge in current_node.adjacent:
-                adjacent_node = edge.nodeTwo
-                currentDistance = distances[current_node] + edge.weight
-                if currentDistance < distances[adjacent_node]:
-                    distances[adjacent_node] = currentDistance
-                    if adjacent_node not in queue:
-                        queue.enqueue(adjacent_node)
-
-        return distances
-
-
-    def fastSP(self, node):
+    def fastSP(self, source):
         # use FastQueue with heap implementation
-        pass
+        distance = {node: math.inf for node in self.elements}
+        distance[source] = 0
+        predecessor = {node: None for node in self.elements}
 
+        queue = FastQueue()
+        queue.push(source, 0) # the "priority" of the nodes is their distance to the source node
 
+        while queue: # while there are items to process
+            # extract the node with the smallest distance from the source, which will be the top element (min-heap)
+            dist, node = queue.pop()
+            for edge in node.adjacent:
+                dist_from_source = dist + edge.weight # calculate the distance of neighbouring nodes from the SOURCE node
+                if dist_from_source < distance[edge.nodeTwo]:
+                    distance[edge.nodeTwo] = dist_from_source # if you found a shorter path to neighbour node from source node, update the distance of the neighbour node
+                    predecessor[edge.nodeTwo] = node
+                    queue.push(edge.nodeTwo, dist_from_source) # we put any neighbours in the queue to see whatever neighbour had the smallest distance from source
+        return distance, predecessor                                                                     
+                                                                                                                                             
 graph = Graph()
 
 graph.importFromFile("random.dot")
@@ -189,3 +143,21 @@ Since we are looking for the smallest current distance relative to the "origin" 
 min-heap, where the node with the smallest distance is simply the node at the very top of the priority queue.
 Such an implementation would be O(1), since the node with the smallest distance is simply at the top of the queue.
 '''
+
+result = graph.fastSP(graph.findNode('3'))
+
+# Convert node references to their corresponding data
+distance = {node.data: distance for node, distance in result[0].items()}
+predecessor = {node.data: predecessor.data if predecessor else None for node, predecessor in result[1].items()}
+
+print("\nNode: Distance from Source")
+print("===================================================")
+for key in distance:
+    if distance[key] != math.inf:
+        print(f'{key}: {distance[key]}')
+
+print("\nNode: Predecessor of Node to get Shortest Path")
+print("===================================================")
+for key in predecessor:
+    if predecessor[key] != None:
+        print(f'{key}: {predecessor[key]}')
