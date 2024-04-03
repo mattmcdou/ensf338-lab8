@@ -127,7 +127,40 @@ class Graph:
                     distance[edge.nodeTwo] = dist_from_source # if you found a shorter path to neighbour node from source node, update the distance of the neighbour node
                     predecessor[edge.nodeTwo] = node
                     queue.push(edge.nodeTwo, dist_from_source) # we put any neighbours in the queue to see whatever neighbour had the smallest distance from source
-        return distance, predecessor                                                                     
+        
+        return distance, predecessor                                         
+    
+    def slowSPsearch(self, source):
+        min_node = None
+        min_dist = math.inf
+
+        for node, distance in source:
+            if distance < min_dist:
+                min_node = node
+                min_dist = distance
+
+        return min_dist, min_node
+
+    def slowSP(self, source):
+        # implement this with an array
+        distance = {node: math.inf for node in self.elements}
+        distance[source] = 0
+        predecessor = {node: None for node in self.elements}
+
+        queue = []
+        queue.append((source, 0))
+
+        while queue:
+            dist, node = self.slowSPsearch(queue)
+            queue.remove((node, dist))
+            for edge in node.adjacent:
+                dist_from_source = dist + edge.weight
+                if dist_from_source < distance[edge.nodeTwo]:
+                    distance[edge.nodeTwo] = dist_from_source
+                    predecessor[edge.nodeTwo] = node
+                    queue.append((edge.nodeTwo, dist_from_source))
+
+        return distance, predecessor
                                                                                                                                              
 graph = Graph()
 
@@ -135,29 +168,57 @@ graph.importFromFile("random.dot")
 graph.printTree()
 
 '''
-Q1) The first way, a slow way, to implement the queue is, as mentioned within the lab slides, to implement a simple queue without
-any special properties. In other words, a queue implemented as a linked list with tail enqueue and head dequeue. However, 
-searching through this queue would be O(n) due to the nature of it being completely unsorted (as it has no special
-properties). However, the second way to implement the queue is to implement it as a priority queue using a heap. 
-Since we are looking for the smallest current distance relative to the "origin" node, we can implement a 
+Q1) The first way, a slow way, to implement the queue is, as mentioned within the lab slides, to implement a simple array implementation 
+where you use a linear search for the node with the minimum distance from the source node. However, searching through this queue would be O(n) due to
+the nature of it being completely unsorted. However, the second way to implement the queue is to implement it as a priority queue 
+using a min-heap. Since we are looking for the smallest current distance relative to the "origin" node, we can implement a 
 min-heap, where the node with the smallest distance is simply the node at the very top of the priority queue.
-Such an implementation would be O(1), since the node with the smallest distance is simply at the top of the queue.
+Such an implementation would be O(1) IN THEORY, since the node with the smallest distance is simply at the top of the queue.
 '''
 
-result = graph.fastSP(graph.findNode('3'))
+# TESTING WITH TIMEIT AND MATPLOTLIB
 
-# Convert node references to their corresponding data
-distance = {node.data: distance for node, distance in result[0].items()}
-predecessor = {node.data: predecessor.data if predecessor else None for node, predecessor in result[1].items()}
+fast_execution_times = []
+slow_execution_times = []
 
-print("\nNode: Distance from Source")
-print("===================================================")
-for key in distance:
-    if distance[key] != math.inf:
-        print(f'{key}: {distance[key]}')
+for node in graph.elements:
+    time = timeit.timeit(lambda: graph.fastSP(node), number=10)
+    fast_execution_times.append(time)
 
-print("\nNode: Predecessor of Node to get Shortest Path")
-print("===================================================")
-for key in predecessor:
-    if predecessor[key] != None:
-        print(f'{key}: {predecessor[key]}')
+for node in graph.elements:
+    time = timeit.timeit(lambda: graph.slowSP(node), number=10)
+    slow_execution_times.append(time)
+
+# Report average, max, and min time
+def report_stats(execution_times):
+    avg_time = sum(execution_times) / len(execution_times)
+    max_time = max(execution_times)
+    min_time = min(execution_times)
+    print(f'Average Time: {avg_time}')
+    print(f'Max Time: {max_time}')
+    print(f'Min Time: {min_time}')
+
+print("\nFastSP Performance:")
+report_stats(fast_execution_times)
+
+print("\nSlowSP Performance:")
+report_stats(slow_execution_times)
+
+# Plot histogram
+plt.hist(fast_execution_times, bins=20, alpha=0.5, label='FastSP')
+plt.hist(slow_execution_times, bins=20, alpha=0.5, label='SlowSP')
+plt.xlabel('Execution Time')
+plt.ylabel('Frequency')
+plt.legend(loc='upper right')
+plt.title('Distribution of Execution Times')
+plt.savefig('ex2.png')
+
+'''
+Q4) Despite slowSP being slower in theory due to the fact that it must linearly search through its queue to find the node with the smallest distance from the source node,
+it was in fact quite similar to performance to fastSP despite fastSP using a min-heap for its queue rather than a simple array. To be honest, intuitively at first, 
+this made no sense, and I did have to go through the code a few times to make sure there were no anomalies, but there don't SEEM to be any, and so the only way I believe
+this could have happened is due to the fact that the queues within both fastSP and slowSP are such a small size upon execution (likely not exceeding 10 nodes within the queue at the same time)
+due to the structure of random.dot. Because the queues are so small, and because the min-heap has to heapify itself every time a new node is added (which is O(nlogn)), they end up taking
+a very similar time to execute. Not only that, but the queue implementation is a small part of dijkstra's algorithm in terms of overall complexity, since the entire algorithm itself is of O(n^2),
+and so this may also be why the execution times, in the end, were very similar. 
+'''
