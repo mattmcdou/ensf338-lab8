@@ -100,10 +100,69 @@ class Graph:
         for element in self.elements:
             print(f"data: {element.data}")
             for adj in element.adjacent:
-                print(f"adjacenies: {adj.nodeOne.data}, {adj.nodeTwo.data}, {adj.weight}")
+                print(f"adjacenies: {adj.nodeOne.data}, {adj.nodeTwo.data} weight: {adj.weight}")
 
+    def dfs(self, start):
+        visited = []
+        startVert = self.findNode(start)
+        self.dfs_operation(visited, startVert)
+        return visited
+
+    def dfs_operation(self, visited, vertex):
+        if vertex.data not in visited:
+            visited.append(vertex.data)
+            for edge in vertex.adjacent:
+                if edge.nodeOne == vertex:
+                    self.dfs_operation(visited, edge.nodeTwo)
+                elif edge.nodeTwo == vertex:
+                    self.dfs_operation(visited, edge.nodeOne)
+
+    def isdagHelper(self, visited, currentPath, vertex):
+        if vertex.data in currentPath:
+            return False
+        else: 
+            currentPath.append(vertex.data)
+        if vertex.data not in visited:
+            visited.append(vertex.data)
+            for edge in vertex.adjacent:
+                if edge.nodeTwo == vertex:
+                    continue # we don't want to check the parent node of the vertex as that will make the function think it's a cycle
+                if not self.isdagHelper(visited, currentPath, edge.nodeTwo):
+                    return False
+            
+        currentPath.remove(vertex.data)
+        return True
+                
+    def isdag(self, start):
+        visited = []
+        currentPath = []
+        startNode = self.findNode(start)
+        return self.isdagHelper(visited, currentPath, startNode)
+    
+    def toposort(self, start):
+        startNode = self.findNode(start)
+        if(self.isdag(start)):
+            topoOrder = []
+            visited = []
+            self.toposortHelper(topoOrder, visited, startNode)
+            topoOrder.reverse()
+            return topoOrder
+        else:
+            return None
+        
+    def toposortHelper(self, topoOrder, visited, vertex):
+        if vertex.data not in visited:
+            visited.append(vertex.data)
+            for edge in vertex.adjacent:
+                if edge.nodeOne == vertex:
+                    self.toposortHelper(topoOrder, visited, edge.nodeTwo)
+                elif edge.nodeTwo == vertex:
+                    self.toposortHelper(topoOrder, visited, edge.nodeOne)
+            topoOrder.append(vertex.data) # we only append the topological order when a dead-end is reached, then we back-track to find any other possible edges
 
 graph = Graph()
-graph.importFromFile("random.dot")
+graph.importFromFile("ex5.dot")
+
+print(graph.toposort('0'))
 
 
